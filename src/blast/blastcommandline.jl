@@ -13,6 +13,9 @@ struct BLASTResult
     hitname::String
     hit::LongSequence
     alignment::AlignedSequence
+    identity::Int64
+    positive::Int64
+    gaps::Int64
 end
 
 """
@@ -47,7 +50,10 @@ function readblastXML(blastrun::AbstractString; seqtype="nucl")
                 aln = AlignedSequence(qseq, hseq)
                 bitscore = parse(Float64, EzXML.nodecontent(findfirst("./Hsp/Hsp_bit-score", hsps)))
                 expect = parse(Float64, EzXML.nodecontent(findfirst("./Hsp/Hsp_evalue", hsps)))
-                push!(results, BLASTResult(bitscore, expect, queryname, hitname, hseq, aln))
+                identity = parse(Int64, EzXML.nodecontent(findfirst("./Hsp/Hsp_identity", hsps)))
+                positive = parse(Int64, EzXML.nodecontent(findfirst("./Hsp/Hsp_positive", hsps)))
+                gaps = parse(Int64, EzXML.nodecontent(findfirst("./Hsp/Hsp_gaps", hsps)))
+                push!(results, BLASTResult(bitscore, expect, queryname, hitname, hseq, aln, identity, positive,gaps))
             end
         end
     end
