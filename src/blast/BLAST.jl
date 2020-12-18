@@ -11,9 +11,9 @@ export
     readblastXML,
     BLASTResult
 
-import BioAlignments: AlignedSequence
-import BioSequences: BioSequence, DNASequence, AminoAcidSequence
-import EzXML
+using BioAlignments
+using EzXML
+using BioSequences 
 
 include("blastcommandline.jl")
 
