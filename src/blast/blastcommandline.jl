@@ -11,7 +11,7 @@ struct BLASTResult
     expect::Float64
     queryname::String
     hitname::String
-    hit::BioSequence
+    hit::LongSequence
     alignment::AlignedSequence
 end
 
@@ -35,11 +35,11 @@ function readblastXML(blastrun::AbstractString; seqtype="nucl")
                 hitname = EzXML.nodecontent(findfirst("./Hit/Hit_def", hit))
                 hsps = findfirst("./Hit/Hit_hsps", hit)
                 if seqtype == "nucl"
-                    qseq = DNASequence(EzXML.nodecontent(findfirst("./Hsp/Hsp_qseq", hsps)))
-                    hseq = DNASequence(EzXML.nodecontent(findfirst("./Hsp/Hsp_hseq", hsps)))
+                    qseq = LongSequence{DNAAlphabet{4}}(EzXML.nodecontent(findfirst("./Hsp/Hsp_qseq", hsps)))
+                    hseq = LongSequence{DNAAlphabet{4}}(EzXML.nodecontent(findfirst("./Hsp/Hsp_hseq", hsps)))
                 elseif seqtype == "prot"
-                    qseq = AminoAcidSequence(EzXML.nodecontent(findfirst("./Hsp/Hsp_qseq", hsps)))
-                    hseq = AminoAcidSequence(EzXML.nodecontent(findfirst("./Hsp/Hsp_hseq", hsps)))
+                    qseq = LongSequence{AminoAcidAlphabet}(EzXML.nodecontent(findfirst("./Hsp/Hsp_qseq", hsps)))
+                    hseq = LongSequence{AminoAcidAlphabet}(EzXML.nodecontent(findfirst("./Hsp/Hsp_hseq", hsps)))
                 else
                     throw(error("Please use \"nucl\" or \"prot\" for seqtype"))
                 end
@@ -71,8 +71,8 @@ end
 """
 `blastn(query, subject, flags...)``
 Runs blastn on `query` against `subject`.
-    Subjects and queries may be file names (as strings), DNASequence type or
-    Array of DNASequence.
+    Subjects and queries may be file names (as strings), LongSequence{DNAAlphabet{4}} type or
+    Array of LongSequence{DNAAlphabet{4}}.
     May include optional `flag`s such as `["-perc_identity", 95,]`. Do not use `-outfmt`.
 """
 function blastn(query::AbstractString, subject::AbstractString, flags=[]; db::Bool=false)
@@ -84,17 +84,17 @@ function blastn(query::AbstractString, subject::AbstractString, flags=[]; db::Bo
     return results
 end
 
-function blastn(query::DNASequence, subject::DNASequence, flags=[])
+function blastn(query::LongSequence{DNAAlphabet{4}}, subject::LongSequence{DNAAlphabet{4}}, flags=[])
     querypath, subjectpath = makefasta(query), makefasta(subject)
     return blastn(querypath, subjectpath, flags)
 end
 
-function blastn(query::DNASequence, subject::Vector{DNASequence}, flags=[])
+function blastn(query::LongSequence{DNAAlphabet{4}}, subject::Vector{LongSequence{DNAAlphabet{4}}}, flags=[])
     querypath, subjectpath = makefasta(query), makefasta(subject)
     blastn(querypath, subjectpath, flags)
 end
 
-function blastn(query::DNASequence, subject::AbstractString, flags=[]; db::Bool=false)
+function blastn(query::LongSequence{DNAAlphabet{4}}, subject::AbstractString, flags=[]; db::Bool=false)
     querypath = makefasta(query)
     if db
         return blastn(querypath, subject, flags, db=true)
@@ -103,12 +103,12 @@ function blastn(query::DNASequence, subject::AbstractString, flags=[]; db::Bool=
     end
 end
 
-function blastn(query::Vector{DNASequence}, subject::Vector{DNASequence}, flags=[])
+function blastn(query::Vector{LongSequence{DNAAlphabet{4}}}, subject::Vector{LongSequence{DNAAlphabet{4}}}, flags=[])
     querypath, subjectpath = makefasta(query), makefasta(subject)
     return blastn(querypath, subjectpath, flags)
 end
 
-function blastn(query::Vector{DNASequence}, subject::AbstractString, flags=[]; db::Bool=false)
+function blastn(query::Vector{LongSequence{DNAAlphabet{4}}}, subject::AbstractString, flags=[]; db::Bool=false)
     querypath = makefasta(query)
     if db
         return blastn(querypath, subject, flags, db=true)
@@ -117,7 +117,7 @@ function blastn(query::Vector{DNASequence}, subject::AbstractString, flags=[]; d
     end
 end
 
-function blastn(query::AbstractString, subject::Vector{DNASequence}, flags=[])
+function blastn(query::AbstractString, subject::Vector{LongSequence{DNAAlphabet{4}}}, flags=[])
     subjectpath = makefasta(subject)
     return blastn(query, subjectpath, flags)
 end
@@ -125,8 +125,8 @@ end
 """
 `blastp(query, subject, flags...)``
 Runs blastn on `query` against `subject`.
-    Subjects and queries may be file names (as strings), `BioSequence{AminoAcidSequence}` type or
-    Array of `BioSequence{AminoAcidSequence}`.
+    Subjects and queries may be file names (as strings), `BioSequence{LongSequence{AminoAcidAlphabet}}` type or
+    Array of `BioSequence{LongSequence{AminoAcidAlphabet}}`.
     May include optional `flag`s such as `["-perc_identity", 95,]`. Do not use `-outfmt`.
 """
 function blastp(query::AbstractString, subject::AbstractString, flags=[]; db::Bool=false)
@@ -138,17 +138,17 @@ function blastp(query::AbstractString, subject::AbstractString, flags=[]; db::Bo
     return results
 end
 
-function blastp(query::AminoAcidSequence, subject::AminoAcidSequence, flags=[])
+function blastp(query::LongSequence{AminoAcidAlphabet}, subject::LongSequence{AminoAcidAlphabet}, flags=[])
     querypath, subjectpath = makefasta(query), makefasta(subject)
     return blastp(querypath, subjectpath, flags)
 end
 
-function blastp(query::AminoAcidSequence, subject::Vector{AminoAcidSequence}, flags=[])
+function blastp(query::LongSequence{AminoAcidAlphabet}, subject::Vector{LongSequence{AminoAcidAlphabet}}, flags=[])
     querypath, subjectpath = makefasta(query), makefasta(subject)
     return blastp(querypath, subjectpath, flags)
 end
 
-function blastp(query::AminoAcidSequence, subject::AbstractString, flags=[]; db::Bool=false)
+function blastp(query::LongSequence{AminoAcidAlphabet}, subject::AbstractString, flags=[]; db::Bool=false)
     querypath = makefasta(query)
     if db
         return blastp(querypath, subject, flags, db=true)
@@ -157,12 +157,12 @@ function blastp(query::AminoAcidSequence, subject::AbstractString, flags=[]; db:
     end
 end
 
-function blastp(query::Vector{AminoAcidSequence}, subject::Vector{AminoAcidSequence}, flags=[])
+function blastp(query::Vector{LongSequence{AminoAcidAlphabet}}, subject::Vector{LongSequence{AminoAcidAlphabet}}, flags=[])
     querypath, subjectpath = makefasta(query), makefasta(subject)
     return blastp(querypath, subjectpath, flags)
 end
 
-function blastp(query::Vector{AminoAcidSequence}, subject::AbstractString, flags=[]; db::Bool=false)
+function blastp(query::Vector{LongSequence{AminoAcidAlphabet}}, subject::AbstractString, flags=[]; db::Bool=false)
     querypath = makefasta(query)
     if db
         return blastp(querypath, subject, flags, db=true)
@@ -171,7 +171,7 @@ function blastp(query::Vector{AminoAcidSequence}, subject::AbstractString, flags
     end
 end
 
-function blastp(query::AbstractString, subject::Vector{AminoAcidSequence}, flags=[])
+function blastp(query::AbstractString, subject::Vector{LongSequence{AminoAcidAlphabet}}, flags=[])
     subjectpath = makefasta(subject)
     return blastp(query, subjectpath, flags)
 end
