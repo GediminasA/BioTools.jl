@@ -11,11 +11,18 @@ struct BLASTResult
     expect::Float64
     queryname::String
     hitname::String
+    hitid::String
+    hitaccession::String
+    hitlen::Int64
     hit::LongSequence
-    alignment::AlignedSequence
     identity::Int64
     positive::Int64
     gaps::Int64
+    queryfrom::Int64
+    queryto::Int64
+    hitfrom::Int64
+    hitto::Int64 
+    alignment::AlignedSequence
 end
 
 """
@@ -36,6 +43,9 @@ function readblastXML(blastrun::AbstractString; seqtype="nucl")
         for hit in findall("Iteration_hits", iteration)
             if EzXML.countelements(hit) > 0
                 hitname = EzXML.nodecontent(findfirst("./Hit/Hit_def", hit))
+                hitid = EzXML.nodecontent(findfirst("./Hit/Hit_id", hit))
+                hitaccession = EzXML.nodecontent(findfirst("./Hit/Hit_accession", hit))
+                hitlen = parse(Int64,EzXML.nodecontent(findfirst("./Hit/Hit_len", hit)))  
                 hsps = findfirst("./Hit/Hit_hsps", hit)
                 if seqtype == "nucl"
                     qseq = LongSequence{DNAAlphabet{4}}(EzXML.nodecontent(findfirst("./Hsp/Hsp_qseq", hsps)))
@@ -48,12 +58,16 @@ function readblastXML(blastrun::AbstractString; seqtype="nucl")
                 end
 
                 aln = AlignedSequence(qseq, hseq)
+                queryfrom = parse(Int64, EzXML.nodecontent(findfirst("./Hsp/Hsp_query-from", hsps)))
+                queryto = parse(Int64, EzXML.nodecontent(findfirst("./Hsp/Hsp_query-to", hsps)))
+                hitfrom = parse(Int64, EzXML.nodecontent(findfirst("./Hsp/Hsp_hit-from", hsps)))
+                hitto = parse(Int64, EzXML.nodecontent(findfirst("./Hsp/Hsp_hit-to", hsps)))
                 bitscore = parse(Float64, EzXML.nodecontent(findfirst("./Hsp/Hsp_bit-score", hsps)))
                 expect = parse(Float64, EzXML.nodecontent(findfirst("./Hsp/Hsp_evalue", hsps)))
                 identity = parse(Int64, EzXML.nodecontent(findfirst("./Hsp/Hsp_identity", hsps)))
                 positive = parse(Int64, EzXML.nodecontent(findfirst("./Hsp/Hsp_positive", hsps)))
                 gaps = parse(Int64, EzXML.nodecontent(findfirst("./Hsp/Hsp_gaps", hsps)))
-                push!(results, BLASTResult(bitscore, expect, queryname, hitname, hseq, aln, identity, positive,gaps))
+                push!(results, BLASTResult(bitscore, expect, queryname, hitname, hitid, hitaccession, hitlen, hseq, identity, positive, gaps, queryfrom, queryto, hitfrom, hitto, aln))
             end
         end
     end
