@@ -46,28 +46,30 @@ function readblastXML(blastrun::AbstractString; seqtype="nucl")
                 hitid = EzXML.nodecontent(findfirst("./Hit/Hit_id", hit))
                 hitaccession = EzXML.nodecontent(findfirst("./Hit/Hit_accession", hit))
                 hitlen = parse(Int64,EzXML.nodecontent(findfirst("./Hit/Hit_len", hit)))  
-                hsps = findfirst("./Hit/Hit_hsps", hit)
-                if seqtype == "nucl"
-                    qseq = LongSequence{DNAAlphabet{4}}(EzXML.nodecontent(findfirst("./Hsp/Hsp_qseq", hsps)))
-                    hseq = LongSequence{DNAAlphabet{4}}(EzXML.nodecontent(findfirst("./Hsp/Hsp_hseq", hsps)))
-                elseif seqtype == "prot"
-                    qseq = LongSequence{AminoAcidAlphabet}(EzXML.nodecontent(findfirst("./Hsp/Hsp_qseq", hsps)))
-                    hseq = LongSequence{AminoAcidAlphabet}(EzXML.nodecontent(findfirst("./Hsp/Hsp_hseq", hsps)))
-                else
-                    throw(error("Please use \"nucl\" or \"prot\" for seqtype"))
-                end
-
-                aln = AlignedSequence(qseq, hseq)
-                queryfrom = parse(Int64, EzXML.nodecontent(findfirst("./Hsp/Hsp_query-from", hsps)))
-                queryto = parse(Int64, EzXML.nodecontent(findfirst("./Hsp/Hsp_query-to", hsps)))
-                hitfrom = parse(Int64, EzXML.nodecontent(findfirst("./Hsp/Hsp_hit-from", hsps)))
-                hitto = parse(Int64, EzXML.nodecontent(findfirst("./Hsp/Hsp_hit-to", hsps)))
-                bitscore = parse(Float64, EzXML.nodecontent(findfirst("./Hsp/Hsp_bit-score", hsps)))
-                expect = parse(Float64, EzXML.nodecontent(findfirst("./Hsp/Hsp_evalue", hsps)))
-                identity = parse(Int64, EzXML.nodecontent(findfirst("./Hsp/Hsp_identity", hsps)))
-                positive = parse(Int64, EzXML.nodecontent(findfirst("./Hsp/Hsp_positive", hsps)))
-                gaps = parse(Int64, EzXML.nodecontent(findfirst("./Hsp/Hsp_gaps", hsps)))
-                push!(results, BLASTResult(bitscore, expect, queryname, hitname, hitid, hitaccession, hitlen, hseq, identity, positive, gaps, queryfrom, queryto, hitfrom, hitto, aln))
+                hsps_section = EzXML.nodecontent(findfirst("./Hit/Hit_hsps", hit))
+                hsps = findall("./Hit/Hit_hsps/Hsp",hit)
+                for hsp in hsps
+                    if seqtype == "nucl"
+                        qseq = LongSequence{DNAAlphabet{4}}(EzXML.nodecontent(findfirst("./Hsp_qseq", hsp)))
+                        hseq = LongSequence{DNAAlphabet{4}}(EzXML.nodecontent(findfirst("./Hsp_hseq", hsp)))
+                    elseif seqtype == "prot"
+                        qseq = LongSequence{AminoAcidAlphabet}(EzXML.nodecontent(findfirst("./Hsp_qseq", hsp)))
+                        hseq = LongSequence{AminoAcidAlphabet}(EzXML.nodecontent(findfirst("./Hsp_hseq", hsp)))
+                    else
+                        throw(error("Please use \"nucl\" or \"prot\" for seqtype"))
+                    end
+                    aln = AlignedSequence(qseq, hseq)
+                    queryfrom = parse(Int64, EzXML.nodecontent(findfirst("./Hsp_query-from", hsp)))
+                    queryto = parse(Int64, EzXML.nodecontent(findfirst("./Hsp_query-to", hsp)))
+                    hitfrom = parse(Int64, EzXML.nodecontent(findfirst("./Hsp_hit-from", hsp)))
+                    hitto = parse(Int64, EzXML.nodecontent(findfirst("./Hsp_hit-to", hsp)))
+                    bitscore = parse(Float64, EzXML.nodecontent(findfirst("./Hsp_bit-score", hsp)))
+                    expect = parse(Float64, EzXML.nodecontent(findfirst("./Hsp_evalue", hsp)))
+                    identity = parse(Int64, EzXML.nodecontent(findfirst("./Hsp_identity", hsp)))
+                    positive = parse(Int64, EzXML.nodecontent(findfirst("./Hsp_positive", hsp)))
+                    gaps = parse(Int64, EzXML.nodecontent(findfirst("./Hsp_gaps", hsp)))
+                    push!(results, BLASTResult(bitscore, expect, queryname, hitname, hitid, hitaccession, hitlen, hseq, identity, positive, gaps, queryfrom, queryto, hitfrom, hitto, aln))
+                end 
             end
         end
     end
