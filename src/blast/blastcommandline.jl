@@ -11,6 +11,7 @@ struct BLASTResult
     expect::Float64
     queryname::String
     hitname::String
+    hittaxid::String 
     hitid::String
     hitaccession::String
     hitlen::Int64
@@ -23,6 +24,68 @@ struct BLASTResult
     hitfrom::Int64
     hitto::Int64 
     alignment::AlignedSequence
+end
+
+
+
+"""
+    readblastXML2(blastrun::AbstractString)
+Parse XML2 output of a blast run (blastn format #16). Input is an XML string eg:
+```julia
+results = read(open("blast_results.xml"), String)
+readblastXML(results)
+```
+Returns Vector{BLASTResult} with the sequence of the hit, the Alignment with query sequence, bitscore and expect value
+"""
+function readblastXML2(blastrun::AbstractString; seqtype="nucl")
+    results = BLASTResult[]
+    xdoc = parse_string(blastrun)
+    xroot = LightXML.root(xdoc)
+    blast_outputs = get_elements_by_tagname(xroot, "BlastOutput2")
+    for blast_output in blast_outputs
+        report = get_elements_by_tagname(blast_output, "report")[1]
+        Report = get_elements_by_tagname(report, "Report")[1]
+        Search = Report["results"][1]["Results"][1]["search"][1]["Search"][1]
+        queryname = content(Search["query-title"][1]) 
+        for hit in Search["hits"][1]["Hit"]
+            #println(hit["num"])
+            hitdescr = hit["description"][1]["HitDescr"][1]
+            hitname = content(hitdescr["title"][1])
+            hitid = content(hitdescr["id"][1])
+            hitaccession = content(hitdescr["accession"][1])
+            hittaxid = content(hitdescr["taxid"][1])
+            hitlen = parse(Int64,content(hit["len"][1]))
+            for hsp in hit["hsps"][1]["Hsp"]
+                gaps = parse(Int64,content(hsp["gaps"][1]))
+                qseq = content(hsp["qseq"][1])
+                hseq = content(hsp["hseq"][1])
+                if seqtype == "nucl"
+                    qseq = LongSequence{DNAAlphabet{4}}(qseq)
+                    hseq = LongSequence{DNAAlphabet{4}}(hseq)
+                    positive = 0
+                elseif seqtype == "prot"
+                    qseq = LongSequence{AminoAcidAlphabet}(qseq)
+                    hseq = LongSequence{AminoAcidAlphabet}(hseq)
+                    positive = parse(Int64,content(hsp["positive"][1]))
+                else
+                    throw(error("Please use \"nucl\" or \"prot\" for seqtype"))
+                end
+                aln = AlignedSequence(qseq, hseq)
+                queryfrom = parse(Int64,content(hsp["query-from"][1]))
+                queryto = parse(Int64,content(hsp["query-to"][1]))
+                hitfrom = parse(Int64,content(hsp["hit-from"][1]))
+                hitto = parse(Int64,content(hsp["hit-to"][1]))
+                bitscore = parse(Float64,content(hsp["bit-score"][1]))
+                score = parse(Int64,content(hsp["score"][1]))
+                expect = parse(Float64,content(hsp["evalue"][1]))
+                identity = parse(Int64,content(hsp["identity"][1]))
+                gaps = parse(Int64,content(hsp["gaps"][1]))
+                push!(results, BLASTResult(bitscore, expect, queryname, hitname,hittaxid, hitid, hitaccession, hitlen, hseq, identity, positive, gaps, queryfrom, queryto, hitfrom, hitto, aln))
+            end
+
+        end
+    end
+    return results
 end
 
 """
@@ -68,7 +131,7 @@ function readblastXML(blastrun::AbstractString; seqtype="nucl")
                     identity = parse(Int64, EzXML.nodecontent(findfirst("./Hsp_identity", hsp)))
                     positive = parse(Int64, EzXML.nodecontent(findfirst("./Hsp_positive", hsp)))
                     gaps = parse(Int64, EzXML.nodecontent(findfirst("./Hsp_gaps", hsp)))
-                    push!(results, BLASTResult(bitscore, expect, queryname, hitname, hitid, hitaccession, hitlen, hseq, identity, positive, gaps, queryfrom, queryto, hitfrom, hitto, aln))
+                    push!(results, BLASTResult(bitscore, expect, queryname,hitname,"0",hitid, hitaccession, hitlen, hseq, identity, positive, gaps, queryfrom, queryto, hitfrom, hitto, aln))
                 end 
             end
         end

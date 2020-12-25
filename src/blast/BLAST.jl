@@ -9,10 +9,12 @@ export
     blastn,
     blastp,
     readblastXML,
+    readblastXML2,
     BLASTResult
 
 using BioAlignments
 using EzXML
+using LightXML
 using BioSequences 
 
 include("blastcommandline.jl")

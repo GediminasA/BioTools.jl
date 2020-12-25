@@ -9,6 +9,7 @@ BioCore = "37cfa864-2cd6-5c12-ad9e-b6597d696c81"
 BioSequences = "7e6ae17a-c86d-528c-b3b9-7f778a29fe59"
 BioSymbols = "3c28c6f8-a34d-59c4-9654-267d177fcfa9"
 EzXML = "8f5d6c58-4d21-5cfd-889c-e3ad7ee6a615"
+LightXML = "9c8b4983-aa76-5018-a973-4c85ecc9e179"
 
 [compat]
 julia = "1.0"
